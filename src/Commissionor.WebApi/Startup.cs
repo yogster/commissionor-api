@@ -20,6 +20,7 @@ namespace Commissionor.WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+            services.AddCors();
             services.AddSignalR();
             services.AddTransient<IEventSource, SignalREventSource>();
         }
@@ -28,7 +29,10 @@ namespace Commissionor.WebApi
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
+            {
                 app.UseDeveloperExceptionPage();
+                app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+            }
 
             app.UseMvc();
             app.UseStaticFiles();
