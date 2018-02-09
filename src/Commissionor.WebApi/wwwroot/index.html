@@ -1,0 +1,16 @@
+<html>
+    <head>
+        <script src="signalr-client-1.0.0-alpha2-final.min.js" type="text/javascript"></script>
+        <script type="text/javascript">
+            let connection = new signalR.HubConnection('http://localhost:5000/api/events');
+            connection.on('event', data => {
+                console.log(data);
+            });
+
+            connection.start();
+        </script>
+    </head>
+    <body>
+        hey
+    </body>
+</html>
