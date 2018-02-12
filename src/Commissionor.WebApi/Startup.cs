@@ -1,7 +1,9 @@
 ﻿using Commissionor.WebApi.Hubs;
+using Commissionor.WebApi.Models;
 using Commissionor.WebApi.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,6 +25,7 @@ namespace Commissionor.WebApi
             services.AddCors();
             services.AddSignalR();
             services.AddTransient<IEventSource, SignalREventSource>();
+            services.AddDbContext<CommissionorDbContext>(options => options.UseSqlite(Configuration["ConnectionStrings:Commissionor"]));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
