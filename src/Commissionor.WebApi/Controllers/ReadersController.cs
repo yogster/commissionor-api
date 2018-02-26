@@ -18,6 +18,19 @@ namespace Commissionor.WebApi.Controllers
             this.dbContext = dbContext;
         }
 
+        [HttpGet("{readerId}")]
+        public async Task<IActionResult> Get(string readerId)
+        {
+            if (string.IsNullOrWhiteSpace(readerId))
+                return BadRequest();
+
+            var reader  = await dbContext.Readers
+                                         .Include(r => r.Locations)
+                                         .SingleOrDefaultAsync(r => r.Id == readerId);
+            
+            return reader != null ? (IActionResult)Ok(reader) : NotFound();
+        }
+
         [HttpPut("{readerId}")]
         public async Task<IActionResult> Create(string readerId, [FromBody] Reader reader)
         {

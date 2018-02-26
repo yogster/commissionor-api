@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using Commissionor.WebApi.Controllers;
 using Commissionor.WebApi.Models;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace Commissionor.WebApi.Tests.Controllers
 {
@@ -184,6 +186,87 @@ namespace Commissionor.WebApi.Tests.Controllers
 
                 // Assert
                 Assert.IsType<BadRequestResult>(result);
+            }
+        }
+
+        [Fact]
+        public async Task Get_returns_BadRequest_if_no_readerId_specified()
+        {
+            // Arrange
+            using (var dbContext = await TestUtils.CreateTestDb())
+            {
+                var controller = CreateController(dbContext);
+
+                // Act
+                var result = await controller.Get(null);
+
+                // Assert
+                result.Should().BeOfType<BadRequestResult>();
+            }
+        }
+
+        [Fact]
+        public async Task Get_returns_reader_data_including_locations()
+        {
+            // Arrange
+            using (var dbContext = await TestUtils.CreateTestDb())
+            {
+                var reader = new Reader()
+                {
+                    Id = "ReaderId",
+                    Description = "Description",
+                    Placement = "Placement",
+                    Locations = new List<Location>() {
+                        new Location() {
+                            ReaderId = "ReaderId",
+                            Site = "Site1",
+                            Room = "Room1",
+                            Door = "Door1"
+                        },
+                        new Location() {
+                            ReaderId = "ReaderId",
+                            Site = "Site2",
+                            Room = "Room2",
+                            Door = "Door2"
+                        },
+                        new Location() {
+                            ReaderId = "ReaderId",
+                            Site = "Site3",
+                            Room = "Room3",
+                            Door = "Door3"
+                        }
+                    }
+                };
+                dbContext.Readers.Add(reader);
+                await dbContext.SaveChangesAsync();
+
+                var controller = CreateController(dbContext);
+
+                // Act
+                var result = await controller.Get("ReaderId");
+
+                // Assert
+                result.Should().BeOfType<OkObjectResult>();
+                var resultData = ((OkObjectResult)result).Value;
+                resultData.Should().BeOfType<Reader>();
+                var resultReader = (Reader)resultData;
+                resultReader.Should().BeEquivalentTo(reader);
+            }
+        }
+
+        [Fact]
+        public async Task Get_returns_NotFound_if_readerId_does_not_exist_in_DB()
+        {
+            // Arrange
+            using (var dbContext = await TestUtils.CreateTestDb())
+            {
+                var controller = CreateController(dbContext);
+
+                // Act
+                var result = await controller.Get("ReaderId");
+
+                // Assert
+                result.Should().BeOfType<NotFoundResult>();
             }
         }
 
