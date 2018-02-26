@@ -76,5 +76,24 @@ namespace Commissionor.WebApi.Controllers
             await dbContext.SaveChangesAsync();
             return Ok();
         }
+
+        [HttpDelete("{readerId}")]
+        public async Task<IActionResult> Delete(string readerId)
+        {
+            if (string.IsNullOrWhiteSpace(readerId))
+                return BadRequest();
+
+            var reader = await dbContext.Readers
+                                        .Include(r => r.Locations)
+                                        .SingleOrDefaultAsync(r => r.Id == readerId);
+
+            if (reader != null)
+            {
+                dbContext.Readers.Remove(reader);
+                await dbContext.SaveChangesAsync();
+                return Ok();
+            }
+            return NotFound();
+        }
     }
 }

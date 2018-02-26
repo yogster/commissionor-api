@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
 using FluentAssertions;
+using System.Linq;
 
 namespace Commissionor.WebApi.Tests.Controllers
 {
@@ -264,6 +265,86 @@ namespace Commissionor.WebApi.Tests.Controllers
 
                 // Act
                 var result = await controller.Get("ReaderId");
+
+                // Assert
+                result.Should().BeOfType<NotFoundResult>();
+            }
+        }
+
+        [Fact]
+        public async Task Delete_returns_BadRequest_if_no_readerId_specified()
+        {
+            // Arrange
+            using (var dbContext = await TestUtils.CreateTestDb())
+            {
+                var controller = CreateController(dbContext);
+
+                // Act
+                var result = await controller.Delete(null);
+
+                // Assert
+                result.Should().BeOfType<BadRequestResult>();
+            }
+        }
+
+        [Fact]
+        public async Task Delete_deletes_reader_including_locations()
+        {
+            // Arrange
+            using (var dbContext = await TestUtils.CreateTestDb())
+            {
+                var reader = new Reader()
+                {
+                    Id = "ReaderId",
+                    Description = "Description",
+                    Placement = "Placement",
+                    Locations = new List<Location>() {
+                        new Location() {
+                            ReaderId = "ReaderId",
+                            Site = "Site1",
+                            Room = "Room1",
+                            Door = "Door1"
+                        },
+                        new Location() {
+                            ReaderId = "ReaderId",
+                            Site = "Site2",
+                            Room = "Room2",
+                            Door = "Door2"
+                        },
+                        new Location() {
+                            ReaderId = "ReaderId",
+                            Site = "Site3",
+                            Room = "Room3",
+                            Door = "Door3"
+                        }
+                    }
+                };
+                dbContext.Readers.Add(reader);
+                await dbContext.SaveChangesAsync();
+
+                var controller = CreateController(dbContext);
+
+                // Act
+                await controller.Delete("ReaderId");
+
+                // Assert
+                var deletedReader = await dbContext.Readers.SingleOrDefaultAsync(r => r.Id == "ReaderId");
+                deletedReader.Should().BeNull();
+                var deletedLocations = await dbContext.Locations.Where(l => l.ReaderId == "ReaderId").ToListAsync();
+                deletedLocations.Should().BeEmpty();
+            }
+        }
+
+        [Fact]
+        public async Task Delete_returns_NotFound_if_readerId_does_not_exist_in_DB()
+        {
+            // Arrange
+            using (var dbContext = await TestUtils.CreateTestDb())
+            {
+                var controller = CreateController(dbContext);
+
+                // Act
+                var result = await controller.Delete("ReaderId");
 
                 // Assert
                 result.Should().BeOfType<NotFoundResult>();
