@@ -39,7 +39,7 @@ namespace Commissionor.WebApi
 
             app.UseMvc();
             app.UseStaticFiles();
-            app.UseSignalR(routes => routes.MapHub<EventHub>("api/events"));
+            app.UseSignalR(routes => routes.MapHub<EventHub>("/api/events"));
         }
     }
 }
