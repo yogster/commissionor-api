@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Commissionor.WebApi.Models;
@@ -16,6 +17,15 @@ namespace Commissionor.WebApi.Controllers
 
         public ReadersController(CommissionorDbContext dbContext) {
             this.dbContext = dbContext;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var allReaders = await dbContext.Readers
+                                            .Include(r => r.Locations)
+                                            .ToListAsync();
+            return Ok(allReaders);
         }
 
         [HttpGet("{readerId}")]

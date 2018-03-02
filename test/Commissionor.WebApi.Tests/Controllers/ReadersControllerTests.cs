@@ -15,11 +15,15 @@ namespace Commissionor.WebApi.Tests.Controllers
 {
     public class ReadersControllerTests
     {
+
+        #region Create
+
         [Fact]
         public async Task Create_creates_reader_in_DB()
         {
             // Arrange
-            using (var dbContext = await TestUtils.CreateTestDb()) {
+            using (var dbContext = await TestUtils.CreateTestDb())
+            {
                 var controller = CreateController(dbContext);
                 const string readerId = "readerId";
                 var reader = new Reader()
@@ -39,7 +43,7 @@ namespace Commissionor.WebApi.Tests.Controllers
                 Assert.NotNull(createdReader);
                 Assert.Equal(readerId, createdReader.Id);
                 Assert.Equal(reader.Placement, createdReader.Placement);
-                Assert.Equal(reader.Description, createdReader.Description);   
+                Assert.Equal(reader.Description, createdReader.Description);
             }
         }
 
@@ -93,6 +97,10 @@ namespace Commissionor.WebApi.Tests.Controllers
                 Assert.IsType<BadRequestResult>(result);
             }
         }
+
+        #endregion
+
+        #region AddLocation
 
         [Fact]
         public async Task AddLocation_adds_reader_location_to_DB()
@@ -190,6 +198,10 @@ namespace Commissionor.WebApi.Tests.Controllers
             }
         }
 
+        #endregion
+
+        #region Get
+
         [Fact]
         public async Task Get_returns_BadRequest_if_no_readerId_specified()
         {
@@ -249,9 +261,8 @@ namespace Commissionor.WebApi.Tests.Controllers
                 // Assert
                 result.Should().BeOfType<OkObjectResult>();
                 var resultData = ((OkObjectResult)result).Value;
-                resultData.Should().BeOfType<Reader>();
-                var resultReader = (Reader)resultData;
-                resultReader.Should().BeEquivalentTo(reader);
+                resultData.Should().BeOfType<Reader>()
+                          .Which.Should().BeEquivalentTo(reader);
             }
         }
 
@@ -270,6 +281,10 @@ namespace Commissionor.WebApi.Tests.Controllers
                 result.Should().BeOfType<NotFoundResult>();
             }
         }
+
+        #endregion
+
+        #region Delete
 
         [Fact]
         public async Task Delete_returns_BadRequest_if_no_readerId_specified()
@@ -350,6 +365,111 @@ namespace Commissionor.WebApi.Tests.Controllers
                 result.Should().BeOfType<NotFoundResult>();
             }
         }
+
+        #endregion
+
+        #region GetAll
+
+        [Fact]
+        public async Task GetAll_returns_all_reader_data_including_locations()
+        {
+            // Arrange
+            using (var dbContext = await TestUtils.CreateTestDb())
+            {
+                dbContext.Readers.Add(new Reader()
+                {
+                    Id = "ReaderId",
+                    Description = "Description",
+                    Placement = "Placement",
+                    Locations = new List<Location>() {
+                        new Location() {
+                            ReaderId = "ReaderId",
+                            Site = "Site1",
+                            Room = "Room1",
+                            Door = "Door1"
+                        },
+                        new Location() {
+                            ReaderId = "ReaderId",
+                            Site = "Site2",
+                            Room = "Room2",
+                            Door = "Door2"
+                        },
+                        new Location() {
+                            ReaderId = "ReaderId",
+                            Site = "Site3",
+                            Room = "Room3",
+                            Door = "Door3"
+                        }
+                    }
+                });
+
+                dbContext.Readers.Add(new Reader()
+                {
+                    Id = "ReaderId2",
+                    Description = "Description2",
+                    Placement = "Placement2",
+                    Locations = new List<Location>() {
+                        new Location() {
+                            ReaderId = "ReaderId2",
+                            Site = "Site12",
+                            Room = "Room12",
+                            Door = "Door12"
+                        },
+                        new Location() {
+                            ReaderId = "ReaderId2",
+                            Site = "Site22",
+                            Room = "Room22",
+                            Door = "Door22"
+                        },
+                        new Location() {
+                            ReaderId = "ReaderId2",
+                            Site = "Site32",
+                            Room = "Room32",
+                            Door = "Door32"
+                        }
+                    }
+                });
+
+                await dbContext.SaveChangesAsync();
+                var dbReaders = await dbContext.Readers
+                                               .Include(r => r.Locations)
+                                               .ToListAsync();
+
+                var controller = CreateController(dbContext);
+
+                // Act
+                var result = await controller.GetAll();
+
+                // Assert
+                result.Should().BeOfType<OkObjectResult>();
+                var resultData = ((OkObjectResult)result).Value;
+                resultData.Should().BeOfType<List<Reader>>()
+                          .Which.Should().BeEquivalentTo(dbReaders);
+            }
+        }
+
+        [Fact]
+        public async Task GetAll_with_empty_DB_still_returns_OK()
+        {
+            // Arrange
+            using (var dbContext = await TestUtils.CreateTestDb())
+            {
+                var controller = CreateController(dbContext);
+
+                // Act
+                var result = await controller.GetAll();
+
+                // Assert
+                result.Should().BeOfType<OkObjectResult>();
+                var resultData = ((OkObjectResult)result).Value;
+                resultData.Should().BeOfType<List<Reader>>()
+                          .Which.Should().BeEmpty();
+            }
+        }
+
+
+        #endregion
+
 
         static ReadersController CreateController(CommissionorDbContext dbContext)
         {
