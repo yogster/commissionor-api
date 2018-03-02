@@ -18,7 +18,7 @@ namespace Commissionor.WebApi.Services
 
         public Task FireEvent(object evt)
         {
-            return hubContext.Clients.All.InvokeAsync("event", evt);
+            return hubContext.Clients.All.SendAsync("event", evt);
         }
     }
 }
